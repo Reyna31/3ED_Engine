@@ -1,9 +1,10 @@
+#Imports
 import struct
 from collections import namedtuple
 
 V2 = namedtuple('Point2', ['x', 'y'])
 
-
+#Definicion de variables para reservar memoria
 def char(c):
     return struct.pack('=c', c.encode('ascii'))
 
@@ -16,7 +17,7 @@ def dword(d):
     # 4 bytes
     return struct.pack('=l', d)
 
-
+#Acepta valores de 0 y 1
 def color(r, g, b):
     return bytes([int(b * 255), int(g * 255), int(r * 255)])
 
@@ -44,6 +45,11 @@ class Renderer(object):
         self.vpWidth = width
         self.vpHeight = height
 
+    def glViewportClear(self,color = None):
+        for x in range(self.vpX, self.vpX + self.vpWidth):
+            for y in range(self.vpY,self.vpY + self.vpHeight):
+                self.glPoint(x,y,color)
+
     def glClearColor(self, r, g, b):
         self.clear_color = color(r, g, b)
 
@@ -59,6 +65,8 @@ class Renderer(object):
 
         if (0 < x < self.vpWidth) and (0 < x < self.vpHeight):
                 self.pixels[int(x)][int(y)] = color or self.curr_color
+
+    #def glPoint_NDC(self,x , y, color = None):
 
     def glLine(self,v0,v1,color = None):
         x0 = v0.x
@@ -78,9 +86,12 @@ class Renderer(object):
             x0, x1 = x1, x0
             y0, y1 = y1, y0
 
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+
         offset = 0
         limit = 0.5
-        m = dy / dx
+        m = dy/dx
         y = y0
 
         for x in range(x0, x1 + 1):
