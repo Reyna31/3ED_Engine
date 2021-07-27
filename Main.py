@@ -4,40 +4,27 @@ from numpy import sin, cos
 
 import random
 
+poli1 = [(165, 380),(185, 360),(180, 330),(207, 345),(233, 330),
+           (230, 360),(250, 380),(220, 385),(205, 410),(193, 383)]
+
+poli2 = [(321, 335),(288, 286),(339, 251),(374, 302)]
+
+poli3 = [(377, 249),(411, 197),(436, 249)]
+
+poli4 = [(413, 177),(448, 159),(502, 88),(553, 53),(535, 36),(676, 37),(660, 52),
+(750, 145),(761, 179),(672, 192),(659, 214),(615, 214),(632, 230),(580, 230),
+(597, 215),(552, 214),(517, 144),(466, 180)]
+
+poli5 = [(682, 175),(708, 120),(735, 148),(739, 170)]
+
 width = 960
 height = 540
 
 rend = Renderer(width, height)
 
-rend.glClearColor(1,1,1)
-rend.glColor(1,1,1)
+for i in range (len(poli1)):
+    rend.glLine(V2(poli1[i][0],poli1[i][1]),V2(poli1[(i + 1) % len(poli1)][0],poli1[(i + 1) % len(poli1)][1]))
 
-#Cuadrado
-rend.glLine(V2(50,50),V2(100,50))
-rend.glLine(V2(50,50),V2(50,100))
-rend.glLine(V2(100,50),V2(100,100))
-rend.glLine(V2(50,100),V2(100,100))
-
-#Pentagono
-rend.glLine(V2(50,200),V2(50,250))
-rend.glLine(V2(50,200),V2(100,175))
-rend.glLine(V2(50,250),V2(100,275))
-rend.glLine(V2(100,175),V2(125,225))
-rend.glLine(V2(100,275),V2(125,225))
-
-#Triangulo
-rend.glLine(V2(150,50),V2(200,50))
-rend.glLine(V2(150,50),V2(150,100))
-rend.glLine(V2(150,100),V2(200,50))
-
-#Hexagono
-rend.glLine(V2(200,400),V2(250,400))
-rend.glLine(V2(250,400),V2(275,450))
-rend.glLine(V2(275,450),V2(250,500))
-rend.glLine(V2(250,500),V2(200,500))
-rend.glLine(V2(200,500),V2(175,450))
-rend.glLine(V2(175,450),V2(200,400))
-
-
+#rend.glLoadModel("",V2(width/2,height/2),V2(100,100))
 
 rend.glFinish("output.bmp")
