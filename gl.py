@@ -2,6 +2,7 @@
 import struct
 from collections import namedtuple
 from Obj import Obj
+import random
 
 V2 = namedtuple('Point2', ['x', 'y'])
 
@@ -41,10 +42,10 @@ class Renderer(object):
         self.glViewPort(0, 0, width, height)
 
     def glViewPort(self, x, y, width, height):
-        self.vpX = x
-        self.vpY = y
-        self.vpWidth = width
-        self.vpHeight = height
+        self.vpX = int(x)
+        self.vpY = int(y)
+        self.vpWidth = int(width)
+        self.vpHeight = int(height)
 
     def glViewportClear(self,color = None):
         for x in range(self.vpX, self.vpX + self.vpWidth):
@@ -55,7 +56,7 @@ class Renderer(object):
         self.clear_color = color(r, g, b)
 
     def glClear(self):
-        self.pixels = [[self.clear_color for x in range(self.width)] for y in range(self.height)]
+        self.pixels = [[self.clear_color for y in range(self.height)] for x in range(self.width)]
 
     def glColor(self, r, g, b):
         self.curr_color = color(r, g, b)
@@ -64,7 +65,7 @@ class Renderer(object):
         if x < self.vpX or x >= self.vpX + self.vpWidth or y < self.vpY or y >= self.vpY + self.vpHeight:
             return
 
-        if (0 < x < self.vpWidth) and (0 < x < self.vpHeight):
+        if (0 <= x < self.vpWidth) and (0 <= x < self.vpHeight):
                 self.pixels[int(x)][int(y)] = color or self.curr_color
 
     #def glPoint_NDC(self,x , y, color = None):
@@ -74,6 +75,10 @@ class Renderer(object):
         x1 = v1.x
         y0 = v0.y
         y1 = v1.y
+
+        if x0 == x1 and y0 == y1:
+            self.glPoint(x0,y1,color)
+            return
 
         dx = abs(x1 - x0)
         dy = abs(y1 - y0)
@@ -113,23 +118,92 @@ class Renderer(object):
         for face in model.faces:
             vertCount= len(face)
 
-            for v in range(vertCount):
-
-                index0 = face[v][0] - 1
-                index1 = face[(v+1)% vertCount][0] - 1
+            if vertCount == 3:
+                index0 = face[0][0] - 1
+                index1 = face[1][0] - 1
+                index2 = face[2][0] - 1
 
                 vert0 = model.vertices[index0]
                 vert1 = model.vertices[index1]
+                vert2 = model.vertices[index2]
 
-                x0 = round(vert0[0] * scale.x + translate.x)
-                y0 = round(vert0[1] * scale.y + translate.y)
-                x1 = round(vert1[0] * scale.x + translate.x)
-                y1 = round(vert1[1] * scale.y + translate.y)
+                a = V2(int(vert0[0] * scale.x + translate.x),int(vert0[1] * scale.y + translate.y))
+                b = V2(int(vert1[0] * scale.x + translate.x), int(vert1[1] * scale.y + translate.y))
+                c = V2(int(vert2[0] * scale.x + translate.x), int(vert2[1] * scale.y + translate.y))
 
-                self.glLine(V2(x0, y0), V2(x1, y1))
+                self.glTriangulo(a,b,c,color(random.random(),random.random(),random.random()))
 
-    #def glPintar(self):
+    def glTriangulo(self,A,B,C,color = None):
 
+        if A.y < B.y:
+            A,B = B,A
+        if A.y < C.y:
+            A,C = C,A
+        if B.y < C.y:
+            B,C = C,B
+
+        def flatBottom(v1,v2,v3):
+            try:
+                d_21 =(v2.x - v1.x)/(v2.y - v1.y)
+                d_31 =(v3.x - v1.x)/(v3.y - v1.y)
+            except:
+                pass
+            else:
+                x1 = v2.x
+                x2 = v3.x
+                for y in range(v2.y,v1.y + 1):
+                    self.glLine(V2(int(x1),y),V2(int(x2),y),color)
+                    x1 += d_21
+                    x2 += d_31
+
+        def flatTop(v1,v2,v3):
+            try:
+                d_31 = (v3.x - v1.x)/(v3.y - v1.y)
+                d_32 = (v3.x - v2.x)/(v3.y - v2.y)
+            except:
+                pass
+            else:
+                x1 = v3.x
+                x2 = v3.x
+
+                for y in range(v3.y,v1.y + 1):
+                    self.glLine(V2(int(x1),y), V2(int(x2),y),color)
+                    x1 += d_31
+                    x2 += d_32
+
+        if B.y == C.y:
+            flatBottom(A,B,C)
+        elif A.y == B.y:
+            flatTop(A,B,C)
+        else:
+            D = V2(A.x + ((B.y - A.y)/(C.y - A.y)) * (C.x - A.x), B.y)
+            flatBottom(A,B,D)
+            flatTop(B,D,C)
+
+    def glDraw(self, poligono):
+        for i in range(len(poligono)):
+            self.glLine(V2(poligono[i][0], poligono[i][1]), V2(poligono[(i+1) % len(poligono)][0], poligono[(i+1) % len(poligono)][1]))
+
+#Funcion basada en Scanline, extraido de GeekforGeeks https://www.geeksforgeeks.org/scan-line-polygon-filling-using-opengl-c/
+    def Scanline(self):
+        for y in range(self.height):
+            Point = []
+            pointSplit = []
+            for x in range(self.width):
+                if self.pixels[x][y] == self.curr_color:
+                    Point.append((x, y))
+            for l in range(0, len(Point)):
+                if (Point[(l + 1) % len(Point)][0] - Point[l][0]) != 1:
+                    pointSplit.append((Point[l]))
+
+            if len(pointSplit) == 0:
+                pass
+            elif len(pointSplit) % 2 == 0:
+                for x in range(0, len(pointSplit), 2):
+                    self.glLine(V2(pointSplit[x][0], pointSplit[x][1]),V2(pointSplit[(x + 1) % len(pointSplit)][0],pointSplit[(x + 1) % len(pointSplit)][1]))
+            elif len(pointSplit) % 3 == 0:
+                for x in range(0, len(pointSplit), 1):
+                    self.glLine(V2(pointSplit[x][0], pointSplit[x][1]),V2(pointSplit[(x + 1) % len(pointSplit)][0],pointSplit[(x + 1) % len(pointSplit)][1]))
 
     def glFinish(self, filename):
         with open(filename, "wb") as file:
@@ -156,4 +230,4 @@ class Renderer(object):
             # ColorTable
             for y in range(self.height):
                 for x in range(self.width):
-                    file.write(self.pixels[y][x])
+                    file.write(self.pixels[x][y])
