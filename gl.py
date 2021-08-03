@@ -192,9 +192,9 @@ class Renderer(object):
             for x in range(self.width):
                 if self.pixels[x][y] == self.curr_color:
                     Point.append((x, y))
-            for l in range(0, len(Point)):
-                if (Point[(l + 1) % len(Point)][0] - Point[l][0]) != 1:
-                    pointSplit.append((Point[l]))
+            for y in range(0, len(Point)):
+                if (Point[(y + 1) % len(Point)][0] - Point[y][0]) != 1:
+                    pointSplit.append((Point[y]))
 
             if len(pointSplit) == 0:
                 pass
